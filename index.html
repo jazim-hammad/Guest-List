@@ -11,13 +11,30 @@
     <section class="hero">
       <p class="eyebrow">Welcome</p>
       <h1>Find Your Table</h1>
-      <p class="hero-copy">Scan the QR code, choose your guest name, and we will point you to the right table.</p>
+      <p class="hero-copy">Find your seat in seconds. Search your name, tap once, and follow the route to your table.</p>
+    </section>
+
+    <section class="controls-bar panel">
+      <div class="controls-row">
+        <div class="toggle-group" role="group" aria-label="Language">
+          <button id="langEnglish" class="mini-toggle active" type="button">English</button>
+          <button id="langRomanUrdu" class="mini-toggle" type="button">Roman Urdu</button>
+        </div>
+        <div class="toggle-group" role="group" aria-label="Accessibility">
+          <button id="largeTextToggle" class="mini-toggle" type="button">Large Text</button>
+          <button id="highContrastToggle" class="mini-toggle" type="button">High Contrast</button>
+        </div>
+      </div>
     </section>
 
     <section class="lookup panel">
       <div class="panel-header">
         <h2>Guest Lookup</h2>
         <p>Search by first or last name, then we will also show related family members at the same table.</p>
+      </div>
+
+      <div class="helper-switch">
+        <button id="helperModeToggle" class="helper-toggle" type="button" aria-pressed="false">I'm helping someone else</button>
       </div>
 
       <div class="lookup-controls">
@@ -32,11 +49,14 @@
         </label>
       </div>
 
+      <div id="suggestions" class="suggestions" aria-live="polite"></div>
+
       <button id="findButton" class="find-button" type="button">Find My Table</button>
 
       <section id="resultCard" class="result-card" aria-live="polite">
         <p class="result-label">Selected Guest</p>
-        <h3 id="guestName">Guest 1</h3>
+        <h3 id="guestName">Choose Your Name</h3>
+        <p id="tableHero" class="table-hero"></p>
         <p id="guestDirection" class="result-direction"></p>
         <div class="family-panel">
           <div>
@@ -48,6 +68,17 @@
             <p id="familyMembers" class="family-value">We will show related names here after you search.</p>
           </div>
         </div>
+        <div class="result-actions">
+          <button id="showFamilyButton" class="secondary-button" type="button">Show My Family</button>
+          <button id="textOnlyToggle" class="secondary-button" type="button">Text Only View</button>
+        </div>
+      </section>
+
+      <section id="textOnlyCard" class="text-only-card" hidden>
+        <p class="result-label">Quick View</p>
+        <p id="textOnlyGuest" class="text-only-guest"></p>
+        <p id="textOnlyTable" class="text-only-line"></p>
+        <p id="textOnlyDirection" class="text-only-line"></p>
       </section>
     </section>
 
@@ -68,6 +99,7 @@
         <div class="map-stage">
           <svg id="routeSvg" class="route-svg" viewBox="0 0 1000 720" preserveAspectRatio="none" aria-hidden="true">
             <path id="routePath" class="route-path" d="" pathLength="100"></path>
+            <circle id="routeTraveler" class="route-traveler" cx="0" cy="0" r="7"></circle>
           </svg>
 
           <div class="stage-marker">
@@ -116,6 +148,7 @@
     </article>
   </template>
 
+  <script src="data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
