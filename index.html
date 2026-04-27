@@ -1,140 +1,121 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Find Your Table</title>
-  <style>
-    body {
-      font-family: Arial;
-      text-align: center;
-      margin: 0;
-      background: #f5f5f5;
-    }
-
-    h1 {
-      margin-top: 20px;
-    }
-
-    input {
-      padding: 12px;
-      width: 80%;
-      font-size: 16px;
-      margin-top: 10px;
-    }
-
-    button {
-      padding: 12px 20px;
-      margin-top: 10px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-
-    #map {
-      margin-top: 20px;
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .table {
-      fill: #ccc;
-      stroke: #333;
-    }
-
-    .highlight {
-      fill: gold;
-    }
-
-    .path {
-      stroke: red;
-      stroke-width: 4;
-      fill: none;
-      stroke-dasharray: 1000;
-      stroke-dashoffset: 1000;
-      animation: draw 2s forwards;
-    }
-
-    @keyframes draw {
-      to {
-        stroke-dashoffset: 0;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <main class="app-shell">
+    <section class="hero">
+      <p class="eyebrow">Welcome</p>
+      <h1>Find Your Table</h1>
+      <p class="hero-copy">Scan the QR code, choose your guest name, and we will point you to the right table.</p>
+    </section>
 
-<h1>Find Your Table</h1>
+    <section class="lookup panel">
+      <div class="panel-header">
+        <h2>Guest Lookup</h2>
+        <p>Search by first or last name, then we will also show related family members at the same table.</p>
+      </div>
 
-<input id="nameInput" placeholder="Enter your name">
-<br>
-<button onclick="findTable()">Show Me</button>
+      <div class="lookup-controls">
+        <label class="field">
+          <span>Guest Name</span>
+          <select id="guestSelect"></select>
+        </label>
 
-<svg id="map" viewBox="0 0 300 400">
+        <label class="field">
+          <span>Quick Search</span>
+          <input id="searchInput" type="search" placeholder="Search first or last name">
+        </label>
+      </div>
 
-  <!-- Entrance -->
-  <circle cx="150" cy="350" r="8" fill="blue" />
+      <button id="findButton" class="find-button" type="button">Find My Table</button>
 
-  <!-- Tables (3x3 grid) -->
-  <rect id="t1" class="table" x="50" y="50" width="50" height="50"/>
-  <rect id="t2" class="table" x="125" y="50" width="50" height="50"/>
-  <rect id="t3" class="table" x="200" y="50" width="50" height="50"/>
+      <section id="resultCard" class="result-card" aria-live="polite">
+        <p class="result-label">Selected Guest</p>
+        <h3 id="guestName">Guest 1</h3>
+        <p id="guestDirection" class="result-direction"></p>
+        <div class="family-panel">
+          <div>
+            <p class="family-label">Family Group</p>
+            <p id="familyGroup" class="family-value">Choose a guest to begin.</p>
+          </div>
+          <div>
+            <p class="family-label">Also at this table</p>
+            <p id="familyMembers" class="family-value">We will show related names here after you search.</p>
+          </div>
+        </div>
+      </section>
+    </section>
 
-  <rect id="t4" class="table" x="50" y="150" width="50" height="50"/>
-  <rect id="t5" class="table" x="125" y="150" width="50" height="50"/>
-  <rect id="t6" class="table" x="200" y="150" width="50" height="50"/>
+    <section class="layout panel">
+      <div class="panel-header">
+        <h2>Event Map</h2>
+        <p>Follow the route from the entrance to your table.</p>
+      </div>
 
-  <rect id="t7" class="table" x="50" y="250" width="50" height="50"/>
-  <rect id="t8" class="table" x="125" y="250" width="50" height="50"/>
-  <rect id="t9" class="table" x="200" y="250" width="50" height="50"/>
+      <div class="map-shell">
+        <div class="map-legend">
+          <span><i class="legend-dot entrance-dot"></i> Entrance</span>
+          <span><i class="legend-dot route-dot"></i> Route</span>
+          <span><i class="legend-dot table-dot"></i> Tables</span>
+          <span><i class="legend-dot active-dot"></i> Selected Table</span>
+        </div>
 
-</svg>
+        <div class="map-stage">
+          <svg id="routeSvg" class="route-svg" viewBox="0 0 1000 720" preserveAspectRatio="none" aria-hidden="true">
+            <path id="routePath" class="route-path" d="" pathLength="100"></path>
+          </svg>
 
-<script>
-const guests = {
-  "jazim": 5,
-  "ali": 2,
-  "sara": 8
-};
+          <div class="stage-marker">
+            <span class="stage-label">Stage</span>
+          </div>
 
-function findTable() {
-  let name = document.getElementById("nameInput").value.toLowerCase();
+          <div class="room room-left">
+            <div class="room-label">
+              <h3>Left Side</h3>
+              <p>2 x 2 grid</p>
+            </div>
+            <div id="leftWing" class="map-grid"></div>
+          </div>
 
-  document.querySelectorAll(".table").forEach(t => {
-    t.classList.remove("highlight");
-  });
+          <div class="room room-right">
+            <div class="room-label">
+              <h3>Right Side</h3>
+              <p>2 x 2 grid</p>
+            </div>
+            <div id="rightWing" class="map-grid"></div>
+          </div>
 
-  document.querySelectorAll(".path").forEach(p => p.remove());
+          <div class="aisle" aria-hidden="true">Main Walkway</div>
+          <div id="entranceMarker" class="entrance-marker">
+            <span class="entrance-badge">Entrance</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  if (guests[name]) {
-    let tableId = "t" + guests[name];
-    document.getElementById(tableId).classList.add("highlight");
+    <section class="directory panel">
+      <div class="panel-header">
+        <h2>Table Directory</h2>
+        <p>Tables can now group related family members together for easier wayfinding.</p>
+      </div>
+      <div id="directoryGrid" class="directory-grid"></div>
+    </section>
+  </main>
 
-    drawPath(guests[name]);
-  } else {
-    alert("Name not found");
-  }
-}
+  <template id="tableCardTemplate">
+    <article class="table-card">
+      <div class="table-badge"></div>
+      <h4 class="table-name"></h4>
+      <p class="table-location"></p>
+      <ul class="guest-tags"></ul>
+    </article>
+  </template>
 
-function drawPath(table) {
-  const paths = {
-    1: "M150 350 L75 75",
-    2: "M150 350 L150 75",
-    3: "M150 350 L225 75",
-    4: "M150 350 L75 175",
-    5: "M150 350 L150 175",
-    6: "M150 350 L225 175",
-    7: "M150 350 L75 275",
-    8: "M150 350 L150 275",
-    9: "M150 350 L225 275"
-  };
-
-  let path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-  path.setAttribute("d", paths[table]);
-  path.setAttribute("class", "path");
-
-  document.getElementById("map").appendChild(path);
-}
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
