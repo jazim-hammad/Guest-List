@@ -426,24 +426,6 @@ function applySearch(query) {
   findButton.disabled = false;
 }
 
-function bindPress(element, handler) {
-  let touched = false;
-
-  element.addEventListener("touchend", (event) => {
-    touched = true;
-    event.preventDefault();
-    handler(event);
-  }, { passive: false });
-
-  element.addEventListener("click", (event) => {
-    if (touched) {
-      touched = false;
-      return;
-    }
-    handler(event);
-  });
-}
-
 guestSelect.addEventListener("change", () => {
   selectedGuest = guestSelect.value;
 });
@@ -452,14 +434,14 @@ searchInput.addEventListener("input", () => {
   applySearch(searchInput.value);
 });
 
-bindPress(findButton, () => {
+findButton.addEventListener("click", () => {
   selectedGuest = guestSelect.value;
   foundGuest = selectedGuest;
   suggestions.innerHTML = "";
   renderFoundGuest();
 });
 
-bindPress(helperModeToggle, () => {
+helperModeToggle.addEventListener("click", () => {
   helperMode = !helperMode;
   helperModeToggle.setAttribute("aria-pressed", String(helperMode));
   helperModeToggle.classList.toggle("active", helperMode);
@@ -467,7 +449,7 @@ bindPress(helperModeToggle, () => {
   if (foundGuest) renderFoundGuest();
 });
 
-bindPress(showFamilyButton, () => {
+showFamilyButton.addEventListener("click", () => {
   highlightFamily = !highlightFamily;
   showFamilyButton.classList.toggle("active", highlightFamily);
   updateCopy();
@@ -475,7 +457,7 @@ bindPress(showFamilyButton, () => {
   else renderTables();
 });
 
-bindPress(textOnlyToggle, () => {
+textOnlyToggle.addEventListener("click", () => {
   textOnlyMode = !textOnlyMode;
   document.body.classList.toggle("text-only-mode", textOnlyMode);
   textOnlyToggle.classList.toggle("active", textOnlyMode);
@@ -484,12 +466,12 @@ bindPress(textOnlyToggle, () => {
   else renderIdleState();
 });
 
-bindPress(largeTextToggle, () => {
+largeTextToggle.addEventListener("click", () => {
   document.body.classList.toggle("large-text");
   largeTextToggle.classList.toggle("active");
 });
 
-bindPress(highContrastToggle, () => {
+highContrastToggle.addEventListener("click", () => {
   document.body.classList.toggle("high-contrast");
   highContrastToggle.classList.toggle("active");
 });
