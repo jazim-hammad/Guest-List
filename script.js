@@ -31,37 +31,6 @@ const STRINGS = {
     suggestionFamilyPrefix: "Family: ",
     quickDirection: (table) => `${table.side} side, ${table.position}.`,
     routeDirection: (table) => `${table.name} is on the ${table.side.toLowerCase()} side, in the ${table.position.toLowerCase()} position. Follow the line from the entrance.`
-  },
-  ur: {
-    heroCopy: "Apni seat foran dhoondhein. Naam search karein, tap karein, aur line follow karein.",
-    lookupCopy: "First ya last name se search karein, phir hum usi table par related family members bhi dikhayenge.",
-    directoryCopy: "Tables ab related family members ko sath group kar sakti hain taa ke raasta dhoondhna asaan ho.",
-    searchPlaceholder: "First ya last name search karein",
-    selectedGuest: "Selected Guest",
-    quickView: "Quick View",
-    familyLabel: "Family Group",
-    tableCompanionsLabel: "Isi table par aur log",
-    helperOff: "Main kisi aur ki help kar raha hoon",
-    helperOn: "Family help mode on hai",
-    findButton: "Find My Table",
-    showFamily: "Meri Family Dikhao",
-    hideFamily: "Family Highlight Chupao",
-    textOnly: "Sirf Text View",
-    showMap: "Map View Dikhao",
-    idleName: "Apna Naam Chunein",
-    idleDirection: "Apna guest naam select karein, phir Find My Table dabayein taa ke entrance se raasta draw ho jaye.",
-    idleFamily: "Family lookup tayyar hai.",
-    idleMembers: "Jab aap kisi aik guest ko dhoondenge, hum us ke sath walay family naam bhi dikhayenge.",
-    noMatchName: "Koi guest match nahin hua",
-    noMatchDirection: "Dosra naam try karein, phir Find My Table dabayein.",
-    noMatchFamily: "Abhi family group match nahin hua.",
-    noMatchMembers: "Naam ki spelling ya kisi related first ya last name se dobara try karein.",
-    guestNotFound: "Guest nahin mila",
-    guestNotFoundDirection: "List se dosra guest naam try karein.",
-    fallbackMembers: "Is guest ke sath is table par koi aur related guest abhi listed nahin hai.",
-    suggestionFamilyPrefix: "Family: ",
-    quickDirection: (table) => `${table.side} side, ${table.position}.`,
-    routeDirection: (table) => `${table.name} ${table.side.toLowerCase()} side par hai, ${table.position.toLowerCase()} jagah par. Entrance se line follow karein.`
   }
 };
 
@@ -89,8 +58,6 @@ const textOnlyCard = document.querySelector("#textOnlyCard");
 const textOnlyGuest = document.querySelector("#textOnlyGuest");
 const textOnlyTable = document.querySelector("#textOnlyTable");
 const textOnlyDirection = document.querySelector("#textOnlyDirection");
-const langEnglish = document.querySelector("#langEnglish");
-const langRomanUrdu = document.querySelector("#langRomanUrdu");
 const largeTextToggle = document.querySelector("#largeTextToggle");
 const highContrastToggle = document.querySelector("#highContrastToggle");
 const heroCopy = document.querySelector(".hero-copy");
@@ -116,11 +83,10 @@ let foundGuest = null;
 let helperMode = false;
 let highlightFamily = false;
 let textOnlyMode = false;
-let currentLanguage = "en";
 let travelerAnimationId = null;
 
 function t() {
-  return STRINGS[currentLanguage];
+  return STRINGS.en;
 }
 
 function normalize(value) {
@@ -236,12 +202,12 @@ function renderSuggestions(query) {
     chip.type = "button";
     chip.className = "suggestion-chip";
     chip.innerHTML = `<span>${guest}</span><span class="suggestion-meta">${t().suggestionFamilyPrefix}${familyListForGuest(guest).join(" / ")}</span>`;
-    chip.addEventListener("click", () => {
-      selectedGuest = guest;
-      guestSelect.value = guest;
-      searchInput.value = guest;
-      suggestions.innerHTML = "";
-      findButton.disabled = false;
+      chip.addEventListener("click", () => {
+        selectedGuest = guest;
+        guestSelect.value = guest;
+        searchInput.value = guest;
+        suggestions.innerHTML = "";
+        findButton.disabled = false;
     });
     suggestions.append(chip);
   });
@@ -440,8 +406,6 @@ function updateCopy() {
   showFamilyButton.textContent = highlightFamily ? t().hideFamily : t().showFamily;
   textOnlyToggle.textContent = textOnlyMode ? t().showMap : t().textOnly;
   document.querySelector("#textOnlyCard .result-label").textContent = t().quickView;
-  langEnglish.classList.toggle("active", currentLanguage === "en");
-  langRomanUrdu.classList.toggle("active", currentLanguage === "ur");
 }
 
 function applySearch(query) {
@@ -462,15 +426,22 @@ function applySearch(query) {
   findButton.disabled = false;
 }
 
-function setLanguage(language) {
-  currentLanguage = language;
-  updateCopy();
+function bindPress(element, handler) {
+  let touched = false;
 
-  if (foundGuest) {
-    renderFoundGuest();
-  } else {
-    renderIdleState();
-  }
+  element.addEventListener("touchend", (event) => {
+    touched = true;
+    event.preventDefault();
+    handler(event);
+  }, { passive: false });
+
+  element.addEventListener("click", (event) => {
+    if (touched) {
+      touched = false;
+      return;
+    }
+    handler(event);
+  });
 }
 
 guestSelect.addEventListener("change", () => {
@@ -481,44 +452,44 @@ searchInput.addEventListener("input", () => {
   applySearch(searchInput.value);
 });
 
-findButton.addEventListener("click", () => {
+bindPress(findButton, () => {
   selectedGuest = guestSelect.value;
   foundGuest = selectedGuest;
   suggestions.innerHTML = "";
   renderFoundGuest();
 });
 
-helperModeToggle.addEventListener("click", () => {
+bindPress(helperModeToggle, () => {
   helperMode = !helperMode;
   helperModeToggle.setAttribute("aria-pressed", String(helperMode));
+  helperModeToggle.classList.toggle("active", helperMode);
   updateCopy();
   if (foundGuest) renderFoundGuest();
 });
 
-showFamilyButton.addEventListener("click", () => {
+bindPress(showFamilyButton, () => {
   highlightFamily = !highlightFamily;
+  showFamilyButton.classList.toggle("active", highlightFamily);
   updateCopy();
   if (foundGuest) renderFoundGuest();
   else renderTables();
 });
 
-textOnlyToggle.addEventListener("click", () => {
+bindPress(textOnlyToggle, () => {
   textOnlyMode = !textOnlyMode;
   document.body.classList.toggle("text-only-mode", textOnlyMode);
+  textOnlyToggle.classList.toggle("active", textOnlyMode);
   updateCopy();
   if (foundGuest) renderFoundGuest();
   else renderIdleState();
 });
 
-langEnglish.addEventListener("click", () => setLanguage("en"));
-langRomanUrdu.addEventListener("click", () => setLanguage("ur"));
-
-largeTextToggle.addEventListener("click", () => {
+bindPress(largeTextToggle, () => {
   document.body.classList.toggle("large-text");
   largeTextToggle.classList.toggle("active");
 });
 
-highContrastToggle.addEventListener("click", () => {
+bindPress(highContrastToggle, () => {
   document.body.classList.toggle("high-contrast");
   highContrastToggle.classList.toggle("active");
 });

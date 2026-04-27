@@ -49,6 +49,11 @@ select {
   font: inherit;
 }
 
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 h1,
 h2,
 h3,
@@ -114,6 +119,10 @@ h1 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.controls-row .toggle-group {
+  justify-content: flex-start;
 }
 
 .mini-toggle,
