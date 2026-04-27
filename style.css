@@ -29,6 +29,7 @@ body {
     var(--card-bg);
   color: var(--text);
   font-family: var(--body-font);
+  scroll-behavior: smooth;
 }
 
 body.large-text {
@@ -129,6 +130,7 @@ h1 {
   color: var(--text-strong);
   border-radius: 999px;
   cursor: pointer;
+  transition: transform 160ms ease, background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .mini-toggle {
@@ -242,6 +244,7 @@ select:focus,
   letter-spacing: 0.04em;
   cursor: pointer;
   box-shadow: 0 10px 24px rgba(0, 40, 19, 0.18);
+  transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
 }
 
 .find-button:disabled {
@@ -257,6 +260,11 @@ select:focus,
   background: linear-gradient(145deg, rgba(0, 40, 19, 0.98), rgba(28, 64, 34, 0.94));
   border: 1px solid rgba(0, 40, 19, 0.12);
   color: var(--paper);
+  transition: transform 220ms ease, opacity 220ms ease, box-shadow 220ms ease;
+}
+
+.result-card.result-emphasis {
+  animation: resultLift 380ms ease;
 }
 
 .result-label {
@@ -332,6 +340,51 @@ select:focus,
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.52);
   border: 1px solid var(--line);
+}
+
+.family-summary-card {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid var(--line);
+  animation: summaryReveal 220ms ease;
+}
+
+.family-summary-title {
+  margin-top: 8px;
+  color: var(--text-strong);
+  font-family: var(--sub-font);
+  font-size: 1.1rem;
+}
+
+.family-summary-intro,
+.family-summary-empty,
+.family-summary-names {
+  margin-top: 8px;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.family-summary-groups {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.family-summary-block {
+  padding: 12px;
+  border-radius: 10px;
+  background: rgba(239, 236, 225, 0.7);
+  border: 1px solid var(--line);
+}
+
+.family-summary-table {
+  color: var(--text-strong);
+  font-family: var(--sub-font);
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .text-only-guest {
@@ -721,6 +774,7 @@ select:focus,
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.5);
   display: block;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .directory-grid .table-card.active,
@@ -774,6 +828,60 @@ select:focus,
   border: 1px solid var(--line);
   font-size: 0.84rem;
   white-space: nowrap;
+}
+
+.guest-tag-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.mini-toggle:active,
+.helper-toggle:active,
+.secondary-button:active,
+.find-button:active,
+.suggestion-chip:active,
+.guest-tag-button:active {
+  transform: scale(0.98);
+}
+
+@keyframes resultLift {
+  0% {
+    transform: translateY(6px);
+    opacity: 0.88;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes summaryReveal {
+  0% {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .guest-tags li.match {

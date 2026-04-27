@@ -1,4 +1,5 @@
-const { guestGroups, tables } = window.APP_DATA;
+const fallbackData = { guestGroups: [], tables: [] };
+const { guestGroups, tables } = window.APP_DATA || fallbackData;
 
 const STRINGS = {
   en: {
@@ -13,10 +14,13 @@ const STRINGS = {
     helperOff: "I'm helping someone else",
     helperOn: "Helping family mode is on",
     findButton: "Find My Table",
-    showFamily: "Show My Family",
-    hideFamily: "Hide Family Highlight",
+    showFamily: "Show Family Summary",
+    hideFamily: "Hide Family Summary",
     textOnly: "Text Only View",
     showMap: "Show Map View",
+    familySummaryLabel: "Family Summary",
+    familySummaryIntro: "Here are the related guests and where they are seated.",
+    noFamilySummary: "No related family seating is available for this guest yet.",
     idleName: "Choose Your Name",
     idleDirection: "Select your guest name, then press Find My Table to draw the route from the entrance.",
     idleFamily: "Family-aware lookup is ready.",
@@ -54,6 +58,10 @@ const findButton = document.querySelector("#findButton");
 const helperModeToggle = document.querySelector("#helperModeToggle");
 const showFamilyButton = document.querySelector("#showFamilyButton");
 const textOnlyToggle = document.querySelector("#textOnlyToggle");
+const familySummaryCard = document.querySelector("#familySummaryCard");
+const familySummaryTitle = document.querySelector("#familySummaryTitle");
+const familySummaryIntro = document.querySelector("#familySummaryIntro");
+const familySummaryGroups = document.querySelector("#familySummaryGroups");
 const textOnlyCard = document.querySelector("#textOnlyCard");
 const textOnlyGuest = document.querySelector("#textOnlyGuest");
 const textOnlyTable = document.querySelector("#textOnlyTable");
@@ -84,6 +92,7 @@ let helperMode = false;
 let highlightFamily = false;
 let textOnlyMode = false;
 let travelerAnimationId = null;
+let routeDrawTimeoutId = null;
 
 function t() {
   return STRINGS.en;
@@ -135,6 +144,13 @@ function relatedFamilyMembers(guest) {
 
 function findTableByGuest(guest) {
   return tables.find((table) => table.guests.includes(guest));
+}
+
+function relatedGuestsWithTables(guest) {
+  return relatedFamilyMembers(guest).map((member) => ({
+    guest: member,
+    table: findTableByGuest(member)
+  }));
 }
 
 function searchCandidates(query) {
@@ -230,7 +246,25 @@ function createTableCard(table, context) {
 
   table.guests.forEach((guest) => {
     const item = document.createElement("li");
-    item.textContent = guest;
+
+    if (context === "directory") {
+      const guestButton = document.createElement("button");
+      guestButton.type = "button";
+      guestButton.className = "guest-tag-button";
+      guestButton.textContent = guest;
+      guestButton.addEventListener("click", () => {
+        selectedGuest = guest;
+        foundGuest = guest;
+        guestSelect.value = guest;
+        searchInput.value = guest;
+        suggestions.innerHTML = "";
+        renderFoundGuest();
+        scrollToExperience();
+      });
+      item.append(guestButton);
+    } else {
+      item.textContent = guest;
+    }
 
     if (foundGuest && guest === foundGuest) {
       item.classList.add("match");
@@ -272,6 +306,55 @@ function renderTextOnly(table) {
   textOnlyDirection.textContent = t().quickDirection(table);
 }
 
+function renderFamilySummary() {
+  if (!highlightFamily || !foundGuest) {
+    familySummaryCard.hidden = true;
+    familySummaryGroups.innerHTML = "";
+    return;
+  }
+
+  const related = relatedGuestsWithTables(foundGuest);
+  familySummaryTitle.textContent = familyListForGuest(foundGuest).join(" / ");
+  familySummaryIntro.textContent = t().familySummaryIntro;
+  familySummaryGroups.innerHTML = "";
+
+  if (related.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "family-summary-empty";
+    empty.textContent = t().noFamilySummary;
+    familySummaryGroups.append(empty);
+    familySummaryCard.hidden = false;
+    return;
+  }
+
+  const grouped = new Map();
+  related.forEach(({ guest, table }) => {
+    const key = table ? table.name : "Unassigned";
+    if (!grouped.has(key)) {
+      grouped.set(key, []);
+    }
+    grouped.get(key).push(guest);
+  });
+
+  grouped.forEach((guests, tableName) => {
+    const block = document.createElement("div");
+    block.className = "family-summary-block";
+
+    const heading = document.createElement("p");
+    heading.className = "family-summary-table";
+    heading.textContent = tableName;
+
+    const names = document.createElement("p");
+    names.className = "family-summary-names";
+    names.textContent = guests.join(", ");
+
+    block.append(heading, names);
+    familySummaryGroups.append(block);
+  });
+
+  familySummaryCard.hidden = false;
+}
+
 function renderResult() {
   const table = findTableByGuest(foundGuest);
 
@@ -296,6 +379,7 @@ function renderResult() {
   familyGroup.textContent = familyListForGuest(foundGuest).join(" / ");
   familyMembers.textContent = companionText;
   renderTextOnly(table);
+  renderFamilySummary();
 }
 
 function clearRoute() {
@@ -306,6 +390,11 @@ function clearRoute() {
   if (travelerAnimationId) {
     cancelAnimationFrame(travelerAnimationId);
     travelerAnimationId = null;
+  }
+
+  if (routeDrawTimeoutId) {
+    clearTimeout(routeDrawTimeoutId);
+    routeDrawTimeoutId = null;
   }
 }
 
@@ -321,19 +410,17 @@ function getCenterPoint(element, relativeTo) {
 
 function animateTraveler() {
   const totalLength = routePath.getTotalLength();
-  const duration = 1200;
+  const duration = 2600;
   const start = performance.now();
   routeTraveler.classList.add("visible");
 
   function step(now) {
-    const progress = Math.min((now - start) / duration, 1);
+    const elapsed = (now - start) % duration;
+    const progress = elapsed / duration;
     const point = routePath.getPointAtLength(totalLength * progress);
     routeTraveler.setAttribute("cx", point.x);
     routeTraveler.setAttribute("cy", point.y);
-
-    if (progress < 1) {
-      travelerAnimationId = requestAnimationFrame(step);
-    }
+    travelerAnimationId = requestAnimationFrame(step);
   }
 
   travelerAnimationId = requestAnimationFrame(step);
@@ -371,14 +458,21 @@ function drawRoute() {
   routePath.setAttribute("d", d);
   routePath.classList.remove("visible");
   routeTraveler.classList.remove("visible");
-  void routePath.getBoundingClientRect();
-  routePath.classList.add("visible");
-  animateTraveler();
+
+  routeDrawTimeoutId = window.setTimeout(() => {
+    void routePath.getBoundingClientRect();
+    routePath.classList.add("visible");
+    animateTraveler();
+  }, 90);
 }
 
 function renderFoundGuest() {
   renderResult();
   renderTables();
+  const resultCard = document.querySelector("#resultCard");
+  resultCard.classList.remove("result-emphasis");
+  void resultCard.getBoundingClientRect();
+  resultCard.classList.add("result-emphasis");
   window.requestAnimationFrame(drawRoute);
 }
 
@@ -390,6 +484,7 @@ function renderIdleState() {
   familyMembers.textContent = t().idleMembers;
   renderTables();
   renderTextOnly(null);
+  renderFamilySummary();
   clearRoute();
 }
 
@@ -406,6 +501,17 @@ function updateCopy() {
   showFamilyButton.textContent = highlightFamily ? t().hideFamily : t().showFamily;
   textOnlyToggle.textContent = textOnlyMode ? t().showMap : t().textOnly;
   document.querySelector("#textOnlyCard .result-label").textContent = t().quickView;
+  document.querySelector("#familySummaryCard .result-label").textContent = t().familySummaryLabel;
+}
+
+function scrollToExperience() {
+  const target = textOnlyMode ? textOnlyCard : document.querySelector(".layout");
+  if (!target) return;
+
+  target.scrollIntoView({
+    behavior: "smooth",
+    block: "start"
+  });
 }
 
 function applySearch(query) {
@@ -439,6 +545,7 @@ findButton.addEventListener("click", () => {
   foundGuest = selectedGuest;
   suggestions.innerHTML = "";
   renderFoundGuest();
+  scrollToExperience();
 });
 
 helperModeToggle.addEventListener("click", () => {
@@ -464,6 +571,7 @@ textOnlyToggle.addEventListener("click", () => {
   updateCopy();
   if (foundGuest) renderFoundGuest();
   else renderIdleState();
+  scrollToExperience();
 });
 
 largeTextToggle.addEventListener("click", () => {
